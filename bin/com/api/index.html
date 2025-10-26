@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Weather API</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f0f8ff;
+            margin: 0;
+            padding: 20px;
+            text-align: center;
+        }
+        h1, h2 {
+            color: #333;
+            animation: fadeIn 2s ease-in;
+        }
+        form {
+            margin: 20px 0;
+        }
+        input, button {
+            padding: 10px;
+            font-size: 16px;
+            margin: 5px;
+        }
+        #weatherResult, #weatherForecast {
+            margin-top: 20px;
+            animation: fadeInUp 1s ease-out;
+        }
+        div {
+            border-radius: 10px;
+            background-color: #e0f7fa;
+            padding: 10px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .forecastDay {
+            border: 1px solid #ddd;
+            margin: 10px 0;
+            padding: 10px;
+            background: #fff;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            animation: slideIn 0.5s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes slideIn {
+            from { transform: translateX(-100%); }
+            to { transform: translateX(0); }
+        }
+    </style>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+</head>
+<body>
+    <h1>Weather Information</h1>
+    <form id="weatherForm">
+        <label for="city">Enter City:</label>
+        <input type="text" id="city" name="city" required>
+        <button type="submit">Get Weather</button>
+    </form>
+    <div id="weatherResult"></div>
+    <h2>Extended Weather Forecast</h2>
+    <div id="weatherForecast"></div>
+
+    <script>
+        document.getElementById('weatherForm').addEventListener('submit', function(event) {
+            event.preventDefault();
+            const city = document.getElementById('city').value.trim();
+            if (!city) {
+                alert("Please enter a city name.");
+                return;
+            }
+            fetch('http://localhost:8085/weather', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' },body: `city=${city}` })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.error) {
+                        document.getElementById('weatherResult').innerHTML = `<p>Error: ${data.error}</p>`;
+                    } else {
+                        document.getElementById('weatherResult').innerHTML = `
+                            <h2>Weather in ${data.city}</h2>
+                            <p>Temperature: ${data.temperature}°C</p>
+                            <p>Condition: ${data.condition}</p>
+                            <p>Humidity: ${data.humidity}</p>
+                        `;
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    document.getElementById('weatherResult').innerHTML = `<p>Error fetching weather data. Please try again later.</p>`;
+                });
+
+            fetch(`http://localhost:8085/forecast?city=${city}`)
+                .then(response => response.json())
+                .then(data => {
+                    let forecastSection = document.getElementById('weatherForecast');
+                    forecastSection.innerHTML = '';
+                    data.forecast.forEach(day => {
+                        let dayDiv = document.createElement('div');
+                        dayDiv.classList.add('forecastDay');
+                        dayDiv.innerHTML = `
+                            <h3>${day.date}</h3>
+                            <p>Temperature: ${day.temperature}°C</p>
+                            <p>Weather: ${day.weather}</p>
+                        `;
+                        forecastSection.appendChild(dayDiv);
+                    });
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    document.getElementById('weatherForecast').innerHTML = `<p>Error fetching forecast data. Please try again later.</p>`;
+                });
+        });
+    </script>
+</body>
+</html>
